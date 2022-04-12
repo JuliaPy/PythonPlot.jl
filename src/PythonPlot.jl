@@ -38,7 +38,7 @@ end
 function Base.show(io::IO, ::MIME"text/plain", h::LazyHelp)
     o = h.o
     for k in h.keys
-        o = o[k]
+        o = pygetattr(o, k)
     end
     if hasproperty(o, :__doc__)
         print(io, pyconvert(String, o.__doc__))
