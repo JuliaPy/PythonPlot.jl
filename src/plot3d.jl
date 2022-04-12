@@ -9,17 +9,10 @@ end
 
 _ispynull(x::Py) = PythonCall.getptr(x) == PythonCall.C.PyNULL
 PythonCall.Py(m::LazyPyModule) = _ispynull(getfield(m, :o)) ? pycopy!(getfield(m, :o), pyimport(getfield(m, :name))) : getfield(m, :o)
-PythonCall.pycall(m::LazyPyModule, args...; kws...) = pycall(Py(m), args...; kws...)
-(m::LazyPyModule)(args...; kws...) = pycall(Py(m), PyAny, args...; kws...)
 Base.Docs.doc(m::LazyPyModule) = Base.Docs.Text(pyconvert(String, Py(m).__doc__))
-
-# define each of these separately for Symbol and AbstractString to avoid method ambiguity:
 Base.getproperty(m::LazyPyModule, x::Symbol) = getproperty(Py(m), x)
-Base.getproperty(m::LazyPyModule, x::AbstractString) = getproperty(Py(m), Symbol(x))
 Base.setproperty!(m::LazyPyModule, x::Symbol, v) = setproperty!(Py(m), x, v)
-Base.setproperty!(m::LazyPyModule, x::AbstractString, v) = setproperty!(Py(m), Symbol(x), v)
 Base.hasproperty(m::LazyPyModule, x::Symbol) = PyCall.hasproperty(Py(m), x)
-Base.hasproperty(m::LazyPyModule, x::AbstractString) = PyCall.hasproperty(Py(m), x)
 Base.propertynames(m::LazyPyModule) = propertynames(Py(m))
 
 ###########################################################################
