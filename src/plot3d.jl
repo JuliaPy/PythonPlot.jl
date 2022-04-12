@@ -1,31 +1,26 @@
 ###########################################################################
-# Lazy wrapper around a PyObject to load a module on demand.
+# Lazy wrapper around a Py to load a module on demand.
 
 mutable struct LazyPyModule
     name::String
-    o::PyObject
-    LazyPyModule(n) = new(n, PyNULL())
+    o::Py
+    LazyPyModule(n::AbstractString) = new(n, PythonCall.pynew())
 end
-PyObject(m::LazyPyModule) = ispynull(getfield(m, :o)) ? copy!(getfield(m, :o), pyimport(getfield(m, :name))) : getfield(m, :o)
-pycall(m::LazyPyModule, args...; kws...) = pycall(PyObject(m), args...; kws...)
-(m::LazyPyModule)(args...; kws...) = pycall(PyObject(m), PyAny, args...; kws...)
-Base.Docs.doc(m::LazyPyModule) = Base.Docs.doc(PyObject(m))
+
+_ispynull(x::Py) = PythonCall.getptr(x) == PythonCall.C.PyNULL
+PythonCall.Py(m::LazyPyModule) = _ispynull(getfield(m, :o)) ? pycopy!(getfield(m, :o), pyimport(getfield(m, :name))) : getfield(m, :o)
+PythonCall.pycall(m::LazyPyModule, args...; kws...) = pycall(Py(m), args...; kws...)
+(m::LazyPyModule)(args...; kws...) = pycall(Py(m), PyAny, args...; kws...)
+Base.Docs.doc(m::LazyPyModule) = Base.Docs.Text(pyconvert(String, Py(m).__doc__))
 
 # define each of these separately for Symbol and AbstractString to avoid method ambiguity:
-Base.getproperty(m::LazyPyModule, x::Symbol) = getproperty(PyObject(m), x)
-Base.getproperty(m::LazyPyModule, x::AbstractString) = getproperty(PyObject(m), x)
-Base.setproperty!(m::LazyPyModule, x::Symbol, v) = setproperty!(PyObject(m), x, v)
-Base.setproperty!(m::LazyPyModule, x::AbstractString, v) = setproperty!(PyObject(m), x, v)
-PyCall.hasproperty(m::LazyPyModule, x::Symbol) = PyCall.hasproperty(PyObject(m), x)
-PyCall.hasproperty(m::LazyPyModule, x::AbstractString) = PyCall.hasproperty(PyObject(m), x)
-
-Base.propertynames(m::LazyPyModule) = propertynames(PyObject(m))
-keys(m::LazyPyModule) = keys(PyObject(m))
-
-# deprecated methods:
-getindex(m::LazyPyModule, x) = getindex(PyObject(m), x)
-setindex!(m::LazyPyModule, v, x) = setindex!(PyObject(m), v, x)
-haskey(m::LazyPyModule, x) = haskey(PyObject(m), x)
+Base.getproperty(m::LazyPyModule, x::Symbol) = getproperty(Py(m), x)
+Base.getproperty(m::LazyPyModule, x::AbstractString) = getproperty(Py(m), Symbol(x))
+Base.setproperty!(m::LazyPyModule, x::Symbol, v) = setproperty!(Py(m), x, v)
+Base.setproperty!(m::LazyPyModule, x::AbstractString, v) = setproperty!(Py(m), Symbol(x), v)
+Base.hasproperty(m::LazyPyModule, x::Symbol) = PyCall.hasproperty(Py(m), x)
+Base.hasproperty(m::LazyPyModule, x::AbstractString) = PyCall.hasproperty(Py(m), x)
+Base.propertynames(m::LazyPyModule) = propertynames(Py(m))
 
 ###########################################################################
 # Lazily load mplot3d modules.  This (slightly) improves load time of PyPlot,
@@ -43,7 +38,7 @@ plotting.   This occurs automatically if you call any of the
 necessary to call this function manually if you are passing
 `projection="3d"` explicitly to axes or subplot objects.
 """
-using3D() = (PyObject(axes3D); nothing)
+using3D() = (Py(axes3D); nothing)
 
 ###########################################################################
 # 3d plotting functions from mplot3d
@@ -58,12 +53,12 @@ for f in mplot3d_funcs
     fs = string(f)
     @eval @doc LazyHelp(axes3D,"Axes3D", $fs) function $f(args...; kws...)
         using3D() # make sure mplot3d is loaded
-        ax = PyPlot.version <= v"3.4" ? gca(projection="3d") : plt."subplot"(projection="3d")
-        pycall(ax.$fs, PyAny, args...; kws...)
+        ax = version <= v"3.4" ? gca(projection="3d") : plt.subplot(projection="3d")
+        pycall(ax.$fs, args...; kws...)
     end
 end
 
-@doc LazyHelp(axes3D,"Axes3D") Axes3D(args...; kws...) = pycall(axes3D."Axes3D", PyAny, args...; kws...)
+@doc LazyHelp(axes3D,"Axes3D") Axes3D(args...; kws...) = pycall(axes3D."Axes3D", args...; kws...)
 
 # correct for annoying mplot3d inconsistency
 @doc LazyHelp(axes3D,"Axes3D", "bar3d") bar3D(args...; kws...) = bar3d(args...; kws...)
@@ -74,8 +69,8 @@ for f in zlabel_funcs
     fs = string("set_", f)
     @eval @doc LazyHelp(axes3D,"Axes3D", $fs) function $f(args...; kws...)
         using3D() # make sure mplot3d is loaded
-        ax = PyPlot.version <= v"3.4" ? gca(projection="3d") : plt."subplot"(projection="3d")
-        pycall(ax.$fs, PyAny, args...; kws...)
+        ax = version <= v"3.4" ? gca(projection="3d") : plt.subplot(projection="3d")
+        pycall(ax.$fs, args...; kws...)
     end
 end
 

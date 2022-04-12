@@ -1,6 +1,6 @@
 ENV["MPLBACKEND"]="agg" # no GUI
 
-using PyPlot, PyCall, Test
+using PythonPlot, PythonCall, Test
 
 @info("PyPlot is using Matplotlib $(PyPlot.version) with Python $(PyCall.pyversion)")
 
@@ -31,8 +31,7 @@ end
 
 c = get_cmap("RdBu")
 a = 0.0:0.25:1.0
-rgba = pycall(pycall(PyPlot.ScalarMappable, PyObject, cmap=c,
-                     norm=PyPlot.Normalize01)."to_rgba", PyArray, a)
+rgba = PyArray(pycall(PyPlot.ScalarMappable; cmap=c, norm=PyPlot.Normalize01).to_rgba(a))
 @test rgba ≈ [  0.403921568627451   0.0                  0.12156862745098039  1.0
                 0.8991926182237601  0.5144175317185697   0.4079200307574009   1.0
                 0.9657054978854287  0.9672433679354094   0.9680891964628989   1.0

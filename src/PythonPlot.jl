@@ -1,52 +1,49 @@
 
 """
-PyPlot allows Julia to interface with the Matplotlib library in Python, specifically the matplotlib.pyplot module, so you can create beautiful plots in Julia with your favorite Python package.
+PythonPlot allows Julia to interface with the Matplotlib library in Python, specifically the matplotlib.pyplot module, so you can create beautiful plots in Julia with your favorite Python package.
 
 Only the currently documented matplotlib.pyplot API is exported. To use other functions in the module, you can also call matplotlib.pyplot.foo(...) as plt.foo(...).
-For example, plt.plot(x, y) also works. (And the raw PyObject for the matplotlib modules is also accessible as PyPlot.matplotlib.)
+For example, plt.plot(x, y) also works. (And the raw Py object for the matplotlib modules is also accessible as PythonPlot.matplotlib.)
 
 In general, all the arguments are the same as in Python.
 
 Here's a brief demo of a simple plot in Julia:
 
-    using PyPlot
+    using PythonPlot
     x = range(0; stop=2*pi, length=1000); y = sin.(3 * x + 4 * cos.(2 * x));
     plot(x, y, color="red", linewidth=2.0, linestyle="--")
     title("A sinusoidally modulated sinusoid")
 
-For more information on API, see the matplotlib.pyplot documentation and the PyPlot GitHub page.
+For more information on API, see the matplotlib.pyplot documentation and the PythonPlot GitHub page.
 """
-module PyPlot
+module PythonPlot
 
-using PyCall
-import PyCall: PyObject, pygui, pycall, pyexists
-import PyCall: hasproperty # Base.hasproperty in Julia 1.2
+using PythonCall
 import Base: convert, ==, isequal, hash, getindex, setindex!, haskey, keys, show
-using Base: @deprecate
 export Figure, plt, matplotlib, pygui, withfig
 
 ###########################################################################
-# Julia 0.4 help system: define a documentation object
-# that lazily looks up help from a PyObject via zero or more keys.
-# This saves us time when loading PyPlot, since we don't have
+# Define a documentation object
+# that lazily looks up help from a Py object via zero or more keys.
+# This saves us time when loading PythonPlot, since we don't have
 # to load up all of the documentation strings right away.
 struct LazyHelp
-    o # a PyObject or similar object supporting getindex with a __doc__ property
+    o # a Py or similar object supporting getindex with a __doc__ property
     keys::Tuple{Vararg{String}}
     LazyHelp(o) = new(o, ())
     LazyHelp(o, k::AbstractString) = new(o, (k,))
     LazyHelp(o, k1::AbstractString, k2::AbstractString) = new(o, (k1,k2))
     LazyHelp(o, k::Tuple{Vararg{AbstractString}}) = new(o, k)
 end
-function show(io::IO, ::MIME"text/plain", h::LazyHelp)
+function Base.show(io::IO, ::MIME"text/plain", h::LazyHelp)
     o = h.o
     for k in h.keys
         o = o[k]
     end
-    if hasproperty(o, "__doc__")
-        print(io, convert(AbstractString, o."__doc__"))
+    if hasproperty(o, :__doc__)
+        print(io, pyconvert(String, o.__doc__))
     else
-        print(io, "no Python docstring found for ", h.k)
+        print(io, "no Python docstring found for ", o)
     end
 end
 Base.show(io::IO, h::LazyHelp) = show(io, "text/plain", h)
@@ -60,54 +57,50 @@ end
 
 ###########################################################################
 
+include("pygui.jl")
 include("init.jl")
 
 ###########################################################################
 # Wrapper around matplotlib Figure, supporting graphics I/O and pretty display
 
 mutable struct Figure
-    o::PyObject
+    o::Py
 end
-PyObject(f::Figure) = getfield(f, :o)
-convert(::Type{Figure}, o::PyObject) = Figure(o)
-==(f::Figure, g::Figure) = PyObject(f) == PyObject(g)
-==(f::Figure, g::PyObject) = PyObject(f) == g
-==(f::PyObject, g::Figure) = f == PyObject(g)
-hash(f::Figure) = hash(PyObject(f))
-pycall(f::Figure, args...; kws...) = pycall(PyObject(f), args...; kws...)
-(f::Figure)(args...; kws...) = pycall(PyObject(f), PyAny, args...; kws...)
-Base.Docs.doc(f::Figure) = Base.Docs.doc(PyObject(f))
+PythonCall.Py(f::Figure) = getfield(f, :o)
+PythonCall.pyconvert(::Type{Figure}, o::Py) = Figure(o)
+==(f::Figure, g::Figure) = Py(f) == Py(g)
+==(f::Figure, g::Py) = Py(f) == g
+==(f::Py, g::Figure) = f == Py(g)
+hash(f::Figure) = hash(Py(f))
+PythonCall.pycall(f::Figure, args...; kws...) = pycall(Py(f), args...; kws...)
+(f::Figure)(args...; kws...) = pycall(Py(f), PyAny, args...; kws...)
+Base.Docs.doc(f::Figure) = Base.Docs.Text(pyconvert(String, Py(f).__doc__))
 
 # Note: using `Union{Symbol,String}` produces ambiguity.
-Base.getproperty(f::Figure, s::Symbol) = getproperty(PyObject(f), s)
-Base.getproperty(f::Figure, s::AbstractString) = getproperty(PyObject(f), s)
-Base.setproperty!(f::Figure, s::Symbol, x) = setproperty!(PyObject(f), s, x)
-Base.setproperty!(f::Figure, s::AbstractString, x) = setproperty!(PyObject(f), s, x)
-hasproperty(f::Figure, s::Symbol) = hasproperty(PyObject(f), s)
-Base.propertynames(f::Figure) = propertynames(PyObject(f))
-haskey(f::Figure, x) = haskey(PyObject(f), x)
-
-@deprecate getindex(f::Figure, x) getproperty(f, x)
-@deprecate setindex!(f::Figure, v, x) setproperty!(f, v, x)
-@deprecate keys(f::Figure) propertynames(f)
+Base.getproperty(f::Figure, s::Symbol) = getproperty(Py(f), s)
+Base.getproperty(f::Figure, s::AbstractString) = getproperty(f, Symbol(s))
+Base.setproperty!(f::Figure, s::Symbol, x) = setproperty!(Py(f), s, x)
+Base.setproperty!(f::Figure, s::AbstractString, x) = setproperty!(f, Symbol(s), x)
+Base.hasproperty(f::Figure, s::Symbol) = hasproperty(Py(f), s)
+Base.propertynames(f::Figure) = propertynames(Py(f))
 
 for (mime,fmt) in aggformats
-    @eval function show(io::IO, m::MIME{Symbol($mime)}, f::Figure)
-        if !haskey(pycall(f."canvas"."get_supported_filetypes", PyDict),
-                   $fmt)
+    @eval _showable(::MIME{Symbol($mime)}, f::Figure) = !isempty(f) && haskey(PyDict{Any,Any}(f.canvas.get_supported_filetypes()), $fmt)
+    @eval function Base.show(io::IO, m::MIME{Symbol($mime)}, f::Figure)
+        if !_showable(m, f)
             throw(MethodError(show, (io, m, f)))
         end
-        f."canvas"."print_figure"(io, format=$fmt, bbox_inches="tight")
+        f.canvas.print_figure(io, format=$fmt, bbox_inches="tight")
     end
     if fmt != "svg"
-        @eval Base.showable(::MIME{Symbol($mime)}, f::Figure) = !isempty(f) && haskey(pycall(f."canvas"."get_supported_filetypes", PyDict), $fmt)
+        @eval Base.showable(m::MIME{Symbol($mime)}, f::Figure) = _showable(m, f)
     end
 end
 
 # disable SVG output by default, since displaying large SVGs (large datasets)
 # in IJulia is slow, and browser SVG display is buggy.  (Similar to IPython.)
 const SVG = [false]
-Base.showable(::MIME"image/svg+xml", f::Figure) = SVG[1] && !isempty(f) && haskey(pycall(f."canvas"."get_supported_filetypes", PyDict), "svg")
+Base.showable(m::MIME"image/svg+xml", f::Figure) = SVG[1] && _showable(m, f)
 svg() = SVG[1]
 svg(b::Bool) = (SVG[1] = b)
 
@@ -118,7 +111,7 @@ svg(b::Bool) = (SVG[1] = b)
 # since the user is keeping track of these in some other way,
 # e.g. for interactive widgets.
 
-Base.isempty(f::Figure) = isempty(pycall(f."get_axes", PyVector))
+Base.isempty(f::Figure) = isempty(f.get_axes())
 
 # We keep a set of figure numbers for the figures used in withfig, because
 # for these figures we don't want to auto-display or auto-close them
@@ -129,12 +122,12 @@ const withfig_fignums = Set{Int}()
 
 function display_figs() # called after IJulia cell executes
     if isjulia_display[]
-        for manager in Gcf."get_all_fig_managers"()
-            f = manager."canvas"."figure"
-            if f.number ∉ withfig_fignums
+        for manager in Gcf.get_all_fig_managers()
+            f = manager.canvas.figure
+            if pyconvert(Int, f.number) ∉ withfig_fignums
                 fig = Figure(f)
                 isempty(fig) || display(fig)
-                pycall(plt."close", PyAny, f)
+                plt.close(f)
             end
         end
     end
@@ -142,10 +135,10 @@ end
 
 function close_figs() # called after error in IJulia cell
     if isjulia_display[]
-        for manager in Gcf."get_all_fig_managers"()
-            f = manager."canvas"."figure"
-            if f.number ∉ withfig_fignums
-                pycall(plt."close", PyAny, f)
+        for manager in Gcf.get_all_fig_managers()
+            f = manager.canvas.figure
+            if pyconvert(Int, f.number) ∉ withfig_fignums
+                plt.close(f)
             end
         end
     end
@@ -155,20 +148,20 @@ end
 const gcf_isnew = [false] # true to force next gcf() to be new figure
 force_new_fig() = gcf_isnew[1] = true
 
-# monkey-patch gcf() and figure() so that we can force the creation
+# wrap gcf() and figure(...) so that we can force the creation
 # of new figures in new IJulia cells (e.g. after @manipulate commands
 # that leave the figure from the previous cell open).
 
 @doc LazyHelp(orig_figure) function figure(args...; kws...)
     gcf_isnew[1] = false
-    pycall(orig_figure, PyAny, args...; kws...)
+    Figure(pycall(orig_figure, args...; kws...))
 end
 
 @doc LazyHelp(orig_gcf) function gcf()
     if isjulia_display[] && gcf_isnew[1]
         return figure()
     else
-        return pycall(orig_gcf, PyAny)
+        return Figure(orig_gcf())
     end
 end
 
@@ -179,41 +172,43 @@ export acorr,annotate,arrow,autoscale,autumn,axhline,axhspan,axis,axline,axvline
 
 # The following pyplot functions must be handled specially since they
 # overlap with standard Julia functions:
-#          close, connect, fill, hist, xcorr
-import Base: close, fill, step
-import Sockets: connect
+#          close, fill, show, step
+# … as in PyPlot.jl, we commit some type piracy here.
 
-const plt_funcs = (:acorr,:annotate,:arrow,:autoscale,:autumn,:axes,:axhline,:axhspan,:axis,:axline,:axvline,:axvspan,:bar,:barbs,:barh,:bone,:box,:boxplot,:broken_barh,:cla,:clabel,:clf,:clim,:cohere,:colorbar,:colors,:contour,:contourf,:cool,:copper,:csd,:delaxes,:disconnect,:draw,:errorbar,:eventplot,:figaspect,:figimage,:figlegend,:figtext,:fill_between,:fill_betweenx,:findobj,:flag,:gca,:gci,:get_current_fig_manager,:get_figlabels,:get_fignums,:get_plot_commands,:ginput,:gray,:grid,:hexbin,:hlines,:hold,:hot,:hsv,:imread,:imsave,:imshow,:ioff,:ion,:ishold,:jet,:legend,:locator_params,:loglog,:margins,:matshow,:minorticks_off,:minorticks_on,:over,:pause,:pcolor,:pcolormesh,:pie,:pink,:plot,:plot_date,:plotfile,:polar,:prism,:psd,:quiver,:quiverkey,:rc,:rc_context,:rcdefaults,:rgrids,:savefig,:sca,:scatter,:sci,:semilogx,:semilogy,:set_cmap,:setp,:specgram,:spectral,:spring,:spy,:stackplot,:stem,:streamplot,:subplot,:subplot2grid,:subplot_tool,:subplots,:subplots_adjust,:summer,:suptitle,:table,:text,:thetagrids,:tick_params,:ticklabel_format,:tight_layout,:title,:tricontour,:tricontourf,:tripcolor,:triplot,:twinx,:twiny,:vlines,:waitforbuttonpress,:winter,:xkcd,:xlabel,:xlim,:xscale,:xticks,:ylabel,:ylim,:yscale,:yticks,:hist,:xcorr,:isinteractive)
+const plt_funcs = (:acorr,:annotate,:arrow,:autoscale,:autumn,:axes,:axhline,:axhspan,:axis,:axline,:axvline,:axvspan,:bar,:barbs,:barh,:bone,:box,:boxplot,:broken_barh,:cla,:clabel,:clf,:clim,:cohere,:colorbar,:colors,:connect,:contour,:contourf,:cool,:copper,:csd,:delaxes,:disconnect,:draw,:errorbar,:eventplot,:figaspect,:figimage,:figlegend,:figtext,:fill_between,:fill_betweenx,:findobj,:flag,:gca,:gci,:get_current_fig_manager,:get_figlabels,:get_fignums,:get_plot_commands,:ginput,:gray,:grid,:hexbin,:hlines,:hold,:hot,:hsv,:imread,:imsave,:imshow,:ioff,:ion,:ishold,:jet,:legend,:locator_params,:loglog,:margins,:matshow,:minorticks_off,:minorticks_on,:over,:pause,:pcolor,:pcolormesh,:pie,:pink,:plot,:plot_date,:plotfile,:polar,:prism,:psd,:quiver,:quiverkey,:rc,:rc_context,:rcdefaults,:rgrids,:savefig,:sca,:scatter,:sci,:semilogx,:semilogy,:set_cmap,:setp,:specgram,:spectral,:spring,:spy,:stackplot,:stem,:streamplot,:subplot,:subplot2grid,:subplot_tool,:subplots,:subplots_adjust,:summer,:suptitle,:table,:text,:thetagrids,:tick_params,:ticklabel_format,:tight_layout,:title,:tricontour,:tricontourf,:tripcolor,:triplot,:twinx,:twiny,:vlines,:waitforbuttonpress,:winter,:xkcd,:xlabel,:xlim,:xscale,:xticks,:ylabel,:ylim,:yscale,:yticks,:hist,:xcorr,:isinteractive)
 
 for f in plt_funcs
     sf = string(f)
     @eval @doc LazyHelp(plt,$sf) function $f(args...; kws...)
-        if !hasproperty(plt, $sf)
+        if !hasproperty(plt, $(QuoteNode(f)))
             error("matplotlib ", version, " does not have pyplot.", $sf)
         end
-        return pycall(plt.$sf, PyAny, args...; kws...)
+        return pycall(plt.$f, args...; kws...)
     end
 end
 
-@doc LazyHelp(plt,"step") step(x, y; kws...) = pycall(plt."step", PyAny, x, y; kws...)
+# type piracy as in PyPlot.jl:
+@doc LazyHelp(plt,"step") Base.step(x, y; kws...) = pycall(plt.step, x, y; kws...)
 
-Base.show(; kws...) = begin pycall(plt."show", PyObject; kws...); nothing; end
+# type piracy as in PyPlot.jl:
+Base.show(; kws...) = begin pycall(plt.show; kws...); nothing; end
 
-close(f::Figure) = close(f.number)
-function close(f::Integer)
+Base.close(f::Figure) = close(f.number)
+
+# type piracy as in PyPlot.jl:
+function Base.close(f::Integer)
     pop!(withfig_fignums, f, f)
-    pycall(plt."close", PyAny, f)
+    plt.close(f)
 end
-close(f::Union{AbstractString,Symbol}) = pycall(plt."close", PyAny, f)
-@doc LazyHelp(plt,"close") close() = pycall(plt."close", PyAny)
+Base.close(f::Union{AbstractString,Symbol}) = plt.close(f)
+@doc LazyHelp(plt,"close") Base.close() = plt.close()
 
-@doc LazyHelp(plt,"connect") connect(s::Union{AbstractString,Symbol}, f::Function) = pycall(plt."connect", PyAny, s, f)
-
-@doc LazyHelp(plt,"fill") fill(x::AbstractArray,y::AbstractArray, args...; kws...) =
+# type piracy as in PyPlot.jl:
+@doc LazyHelp(plt,"fill") Base.fill(x::AbstractArray,y::AbstractArray, args...; kws...) =
     pycall(plt."fill", PyAny, x, y, args...; kws...)
 
-# consistent capitalization with mplot3d, avoid conflict with Base.hist2d
-@doc LazyHelp(plt,"hist2d") hist2D(args...; kws...) = pycall(plt."hist2d", PyAny, args...; kws...)
+# consistent capitalization with mplot3d
+@doc LazyHelp(plt,"hist2d") hist2D(args...; kws...) = pycall(plt.hist2d, args...; kws...)
 
 include("colormaps.jl")
 
@@ -228,9 +223,9 @@ function bar(x::AbstractVector{<:AbstractString}, y; kws_...)
     end
     p = bar(xi, y; kws...)
     ax = any(kw -> kw[1] == :orientation && lowercase(kw[2]) == "horizontal",
-             pairs(kws)) ? gca()."yaxis" : gca()."xaxis"
-    ax."set_ticks"(xi)
-    ax."set_ticklabels"(x)
+             pairs(kws)) ? gca().yaxis : gca().xaxis
+    ax.set_ticks(xi)
+    ax.set_ticklabels(x)
     return p
 end
 

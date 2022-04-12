@@ -1,0 +1,4 @@
+channels = ["conda-forge"]
+
+[deps]
+matplotlib = ">=1"

@@ -8,57 +8,52 @@ export ColorMap, get_cmap, register_cmap, get_cmaps
 # Wrapper around colors.Colormap type:
 
 mutable struct ColorMap
-    o::PyObject
+    o::Py
 end
 
-PyObject(c::ColorMap) = getfield(c, :o)
-convert(::Type{ColorMap}, o::PyObject) = ColorMap(o)
-==(c::ColorMap, g::ColorMap) = PyObject(c) == PyObject(g)
-==(c::PyObject, g::ColorMap) = c == PyObject(g)
-==(c::ColorMap, g::PyObject) = PyObject(c) == g
-hash(c::ColorMap) = hash(PyObject(c))
-pycall(c::ColorMap, args...; kws...) = pycall(PyObject(c), args...; kws...)
-(c::ColorMap)(args...; kws...) = pycall(PyObject(c), PyAny, args...; kws...)
-Base.Docs.doc(c::ColorMap) = Base.Docs.doc(PyObject(c))
+PythonCall.Py(c::ColorMap) = getfield(c, :o)
+PythonCall.pyconvert(::Type{ColorMap}, o::Py) = ColorMap(o)
+==(c::ColorMap, g::ColorMap) = Py(c) == Py(g)
+==(c::Py, g::ColorMap) = c == Py(g)
+==(c::ColorMap, g::Py) = Py(c) == g
+hash(c::ColorMap) = hash(Py(c))
+PythonCall.pycall(c::ColorMap, args...; kws...) = pycall(Py(c), args...; kws...)
+(c::ColorMap)(args...; kws...) = pycall(Py(c), args...; kws...)
+Base.Docs.doc(c::ColorMap) = Base.Docs.Text(pyconvert(String, Py(c).__doc__))
 
 # Note: using `Union{Symbol,String}` produces ambiguity.
-Base.getproperty(c::ColorMap, s::Symbol) = getproperty(PyObject(c), s)
-Base.getproperty(c::ColorMap, s::AbstractString) = getproperty(PyObject(c), s)
-Base.setproperty!(c::ColorMap, s::Symbol, x) = setproperty!(PyObject(c), s, x)
-Base.setproperty!(c::ColorMap, s::AbstractString, x) = setproperty!(PyObject(c), s, x)
-Base.propertynames(c::ColorMap) = propertynames(PyObject(c))
-hasproperty(c::ColorMap, s::Union{Symbol,AbstractString}) = hasproperty(PyObject(c), s)
-haskey(c::ColorMap, x) = haskey(PyObject(c), x)
-
-@deprecate getindex(c::ColorMap, x) getproperty(c, x)
-@deprecate setindex!(c::ColorMap, s, x) setproperty!(c, s, x)
-@deprecate keys(c::ColorMap) propertynames(c)
+Base.getproperty(c::ColorMap, s::Symbol) = getproperty(Py(c), s)
+Base.getproperty(c::ColorMap, s::AbstractString) = getproperty(Py(c), Symbol(s))
+Base.setproperty!(c::ColorMap, s::Symbol, x) = setproperty!(Py(c), s, x)
+Base.setproperty!(c::ColorMap, s::AbstractString, x) = setproperty!(Py(c), Symbol(s), x)
+Base.propertynames(c::ColorMap) = propertynames(Py(c))
+Base.hasproperty(c::ColorMap, s::Union{Symbol,AbstractString}) = hasproperty(Py(c), s)
 
 function show(io::IO, c::ColorMap)
-    print(io, "ColorMap \"$(c.name)\"")
+    print(io, "ColorMap \"$(pyconvert(String, c.name))\"")
 end
 
 # all Python dependencies must be initialized at runtime (not when precompiled)
-const colorsm = PyNULL()
-const cm = PyNULL()
-const LinearSegmentedColormap = PyNULL()
-const cm_get_cmap = PyNULL()
-const cm_register_cmap = PyNULL()
-const ScalarMappable = PyNULL()
-const Normalize01 = PyNULL()
+const colorsm = PythonCall.pynew()
+const cm = PythonCall.pynew()
+const LinearSegmentedColormap = PythonCall.pynew()
+const cm_get_cmap = PythonCall.pynew()
+const cm_register_cmap = PythonCall.pynew()
+const ScalarMappable = PythonCall.pynew()
+const Normalize01 = PythonCall.pynew()
 function init_colormaps()
-    copy!(colorsm, pyimport("matplotlib.colors"))
-    copy!(cm, pyimport("matplotlib.cm"))
+    PythonCall.pycopy!(colorsm, pyimport("matplotlib.colors"))
+    PythonCall.pycopy!(cm, pyimport("matplotlib.cm"))
 
-    pytype_mapping(colorsm."Colormap", ColorMap)
+    # pytype_mapping(colorsm.Colormap, ColorMap)
 
-    copy!(LinearSegmentedColormap, colorsm."LinearSegmentedColormap")
+    PythonCall.pycopy!(LinearSegmentedColormap, colorsm.LinearSegmentedColormap)
 
-    copy!(cm_get_cmap, cm."get_cmap")
-    copy!(cm_register_cmap, cm."register_cmap")
+    PythonCall.pycopy!(cm_get_cmap, cm.get_cmap)
+    PythonCall.pycopy!(cm_register_cmap, cm.register_cmap)
 
-    copy!(ScalarMappable, cm."ScalarMappable")
-    copy!(Normalize01, pycall(colorsm."Normalize",PyAny,vmin=0,vmax=1))
+    PythonCall.pycopy!(ScalarMappable, cm.ScalarMappable)
+    PythonCall.pycopy!(Normalize01, pycall(colorsm.Normalize; vmin=0,vmax=1))
 end
 
 ########################################################################
@@ -85,8 +80,7 @@ function ColorMap(name::Union{AbstractString,Symbol},
     if !isempty(a)
         segmentdata["alpha"] = a
     end
-    pycall(LinearSegmentedColormap, ColorMap,
-           name, segmentdata, n, gamma)
+    ColorMap(LinearSegmentedColormap(name, segmentdata, n, gamma))
 end
 
 # create from an array c, assuming linear mapping from [0,1] to c
@@ -144,26 +138,26 @@ ColorMap(c::AbstractMatrix{T}, n=max(256, size(c,1)), gamma=1.0) where {T<:Real}
 
 ########################################################################
 
-@doc LazyHelp(cm_get_cmap) get_cmap() = pycall(cm_get_cmap, PyAny)
-get_cmap(name::Union{AbstractString,Symbol}) = pycall(cm_get_cmap, PyAny, name)
-get_cmap(name::Union{AbstractString,Symbol}, lut::Integer) = pycall(cm_get_cmap, PyAny, name, lut)
+@doc LazyHelp(cm_get_cmap) get_cmap() = ColorMap(cm_get_cmap())
+get_cmap(name::AbstractString) = ColorMap(pycall(cm_get_cmap(name)))
+get_cmap(name::AbstractString, lut::Integer) = ColorMap(cm_get_cmap(name, lut))
 get_cmap(c::ColorMap) = c
-ColorMap(name::Union{AbstractString,Symbol}) = get_cmap(name)
+ColorMap(name::AbstractString) = get_cmap(name)
 
-@doc LazyHelp(cm_register_cmap) register_cmap(c::ColorMap) = pycall(cm_register_cmap, PyAny, c)
-register_cmap(n::Union{AbstractString,Symbol}, c::ColorMap) = pycall(cm_register_cmap, PyAny, n,c)
+@doc LazyHelp(cm_register_cmap) register_cmap(c::ColorMap) = cm_register_cmap(c)
+register_cmap(n::AbstractString, c::ColorMap) = cm_register_cmap(n,c)
 
 # convenience function to get array of registered colormaps
 get_cmaps() =
     ColorMap[get_cmap(c) for c in
              sort(filter!(c -> !endswith(c, "_r"),
-                          AbstractString[c for (c,v) in PyDict(PyPlot.cm."datad")]),
+                          [pyconvert(String, c) for c in PyPlot.cm.datad]),
                   by=lowercase)]
 
 ########################################################################
 # display of ColorMaps as a horizontal color bar in SVG
 
-function show(io::IO, ::MIME"image/svg+xml", cs::AbstractVector{ColorMap})
+function Base.show(io::IO, ::MIME"image/svg+xml", cs::AbstractVector{ColorMap})
     n = 256
     nc = length(cs)
     a = range(0; stop=1, length=n)
@@ -184,8 +178,7 @@ function show(io::IO, ::MIME"image/svg+xml", cs::AbstractVector{ColorMap})
         c = cs[j]
         y = (j-1) * (height+pad)
         write(io, """<text x="$(n*width+1)mm" y="$(y+3.8)mm" font-size="3mm">$(c.name)</text>""")
-        rgba = pycall(pycall(ScalarMappable, PyObject, cmap=c,
-                             norm=Normalize01)."to_rgba", PyArray, a)
+        rgba = PyArray(pycall(ScalarMappable; cmap=c, norm=Normalize01).to_rgba(a))
         for i = 1:n
             write(io, """<rect x="$((i-1)*width)mm" y="$(y)mm" width="$(width)mm" height="$(height)mm" fill="#$(hex(RGB(rgba[i,1],rgba[i,2],rgba[i,3])))" stroke="none" />""")
         end
@@ -193,7 +186,7 @@ function show(io::IO, ::MIME"image/svg+xml", cs::AbstractVector{ColorMap})
     write(io, "</svg>")
 end
 
-function show(io::IO, m::MIME"image/svg+xml", c::ColorMap)
+function Base.show(io::IO, m::MIME"image/svg+xml", c::ColorMap)
     show(io, m, [c])
 end
 

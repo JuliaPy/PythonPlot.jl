@@ -1,15 +1,12 @@
-[![Build Status](https://travis-ci.org/JuliaPy/PyPlot.jl.svg?branch=master)](https://travis-ci.org/JuliaPy/PyPlot.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/github/JuliaPy/PyPlot.jl?branch=master)](https://ci.appveyor.com/project/StevenGJohnson/pyplot-jl/branch/master)
-
-# The PyPlot module for Julia
+# The PythonPlot module for Julia
 
 This module provides a Julia interface to the
 [Matplotlib](http://matplotlib.org/) plotting library from Python, and
 specifically to the `matplotlib.pyplot` module.
 
-PyPlot uses the Julia [PyCall](https://github.com/stevengj/PyCall.jl)
+PythonPlot uses the Julia [PythonCall.jl](https://github.com/cjdoris/PythonCall.jl)
 package to call Matplotlib directly from Julia with little or no
-overhead (arrays are passed without making a copy).
+overhead (arrays are passed without making a copy).  It is based on a fork of the [PyPlot.jl](https://github.com/JuliaPy/PyPlot.jl) package, which uses the older [PyCall.jl](https://github.com/JuliaPy/PyCall.jl) interface to Python, and is intended to function as a mostly drop-in replacement for PyPlot.jl.
 
 This package takes advantage of Julia's [multimedia
 I/O](https://docs.julialang.org/en/latest/base/io-network/#Multimedia-I/O-1)
@@ -18,74 +15,27 @@ inline graphics in [IJulia](https://github.com/JuliaLang/IJulia.jl).
 Alternatively, you can use a Python-based graphical Matplotlib
 backend to support interactive plot zooming etcetera.
 
-(This PyPlot package replaces an earlier package of the same name by
-[Junfeng Li](https://github.com/autozimu/), which used PyPlot over a
-ZeroMQ socket with IPython.)
-
 ## Installation
 
-You will need to have the Python [Matplotlib](http://matplotlib.org/)
-library installed on your machine in order to use PyPlot.  You can either
+The PythonPlot package uses the [CondaPkg.jl](https://github.com/cjdoris/CondaPkg.jl) package to automatically install Matplotlib as needed.
+
+(If you configure PythonCall to use some custom Python installation, you will need to install Matplotlib yourself.)
+
+You can either
 do inline plotting with [IJulia](https://github.com/JuliaLang/IJulia.jl),
 which doesn't require a GUI backend, or use the Qt, wx, or GTK+ backends
 of Matplotlib as described below.
 
-Once Matplotlib is installed, then you can just use
-`Pkg.add("PyPlot")` in Julia to install PyPlot and its dependencies.
-
-### Automated Matplotlib installation
-
-If you set up PyCall to use the
-[Conda.jl](https://github.com/Luthaf/Conda.jl) package to install a
-private (not in the system `PATH`) Julia Python distribution (via
-Miniconda), then PyPlot will automatically install Matplotlib as needed.
-
-If you are installing PyCall and PyPlot for the first time, just do `ENV["PYTHON"]=""` before running `Pkg.add("PyPlot")`.  Otherwise, you can reconfigure PyCall to use Conda via:
-```
-ENV["PYTHON"]=""
-Pkg.build("PyCall")
-```
-The next time you import `PyPlot`, it will tell Conda to install Matplotlib.
-
-### OS X
-
-On MacOS, you should either install
-[XQuartz](http://xquartz.macosforge.org/landing/) for MacOS 10.9 or
-later or install the [Anaconda](http://continuum.io/downloads) Python
-distribution in order to get a fully functional PyPlot.
-
-MacOS 10.9 comes with Python and Matplotlib, but this version of
-Matplotlib defaults to with the Cocoa GUI backend, which is [not
-supported by PyPlot](https://github.com/stevengj/PyPlot.jl/issues/11).
-It also has a Tk backend, which is supported, but the Tk backend does
-not work unless you install XQuartz.
-
-Alternatively, you can install the
-[Anaconda](http://continuum.io/downloads) Python distribution
-(which also includes `ipython` and other IJulia dependencies).
-
-Otherwise, you can use the [Homebrew](http://brew.sh/) package manager:
-```
-brew install python gcc freetype pyqt
-brew link --force freetype
-export PATH="/usr/local/bin:$PATH"
-export PYTHONPATH="/usr/local/lib/python2.7:$PYTHONPATH"
-pip install numpy scipy matplotlib
-```
-(You may want to add the two `export` commands to your `~/.profile` file so that they
-are automatically executed whenever you start a shell.)
-
 ## Basic usage
 
-Once Matplotlib and PyPlot are installed, and you are using a
+Once Matplotlib and PythonPlot are installed, and you are using a
 graphics-capable Julia environment such as IJulia, you can simply type
-`using PyPlot` and begin calling functions in the
+`using PythonPlot` and begin calling functions in the
 [matplotlib.pyplot](http://matplotlib.org/api/pyplot_api.html) API.
 For example:
 
 ```
-using PyPlot
-# use x = linspace(0,2*pi,1000) in Julia 0.6
+using PythonPlot
 x = range(0; stop=2*pi, length=1000); y = sin.(3 * x + 4 * cos.(2 * x));
 plot(x, y, color="red", linewidth=2.0, linestyle="--")
 title("A sinusoidally modulated sinusoid")
@@ -99,29 +49,29 @@ e.g. Julia uses `true` and `nothing` instead of Python's `True` and
 The full `matplotlib.pyplot` API is far too extensive to describe here;
 see the [matplotlib.pyplot documentation for more
 information](http://matplotlib.org/api/pyplot_api.html).  The Matplotlib
-version number is returned by `PyPlot.version`.
+version number is returned by `PythonPlot.version`.
 
 ### Exported functions
 
 Only the currently documented `matplotlib.pyplot` API is exported.  To use
 other functions in the module, you can also call `matplotlib.pyplot.foo(...)`
 as `plt.foo(...)`.  For example, `plt.plot(x, y)` also works.  (And
-the raw `PyObject` for the `matplotlib` modules is also accessible
-as `PyPlot.matplotlib`.)
+the raw `Py` object for the `matplotlib` modules is also accessible
+as `PythonPlot.matplotlib`.)
 
 Matplotlib is somewhat inconsistent about capitalization: it has
 `contour3D` but `bar3d`, etcetera.  PyPlot renames all such functions
 to use a capital *D* (e.g. it has `hist2D`, `bar3D`, and so on).
 
 You must also explicitly qualify some functions
-built-in Julia functions.  In particular, `PyPlot.xcorr`,
-`PyPlot.axes`, and `PyPlot.isinteractive`
+built-in Julia functions.  In particular, `PythonPlot.xcorr`,
+`PythonPlot.axes`, and `PythonPlot.isinteractive`
 must be used to access `matplotlib.pyplot.xcorr`
 etcetera.
 
 If you wish to access *all* of the PyPlot functions exclusively
 through `plt.somefunction(...)`, as is conventional in Python, you can
-do `import PyPlot; const plt = PyPlot` instead of `using PyPlot`.
+do `import PythonPlot as plt` instead of `using PythonPlot`.
 
 ### Figure objects
 
@@ -137,12 +87,12 @@ Matplotlib backend.
 
 ## Non-interactive plotting
 
-If you use PyPlot from an interactive Julia prompt, such as the Julia
+If you use PythonPlot from an interactive Julia prompt, such as the Julia
 [command-line prompt](http://docs.julialang.org/en/latest/manual/interacting-with-julia/)
 or an IJulia notebook, then plots appear immediately after a plotting
 function (`plot` etc.) is evaluated.
 
-However, if you use PyPlot from a Julia script that is run non-interactively
+However, if you use PythonPlot from a Julia script that is run non-interactively
 (e.g. `julia myscript.jl`), then Matplotlib is executed in
 [non-interactive mode](http://matplotlib.org/faq/usage_faq.html#what-is-interactive-mode):
 a plot window is not opened until you run `show()` (equivalent to `plt.show()`
@@ -150,7 +100,7 @@ in the Python examples).
 
 ## Interactive versus Julia graphics
 
-PyPlot can use any Julia graphics backend capable of displaying PNG,
+PythonPlot can use any Julia graphics backend capable of displaying PNG,
 SVG, or PDF images, such as the IJulia environment.  To use a
 different backend, simply call `pushdisplay` with the desired
 `Display`; see the [Julia multimedia display
@@ -168,7 +118,7 @@ while `pygui(false)` will return to the Julia backend.  Even when a
 Python GUI is running, you can display the current figure with the
 Julia backend by running `display(gcf())`.
 
-If no Julia graphics backend is available when PyPlot is imported, then
+If no Julia graphics backend is available when PythonPlot is imported, then
 `pygui(true)` is the default.
 
 ### Choosing a Python GUI toolkit
@@ -177,16 +127,16 @@ Only the [Tk](http://www.tcl.tk/), [wxWidgets](http://www.wxwidgets.org/),
 [GTK+](http://www.gtk.org/) (version 2 or 3), and [Qt](http://qt-project.org/) (version 4 or 5; via the PyQt5,
 [PyQt4](http://wiki.python.org/moin/PyQt4) or
 [PySide](http://qt-project.org/wiki/PySide)), Python GUI backends are
-supported by PyPlot.  (Obviously, you must have installed one of these
-toolkits for Python first.)  By default, PyPlot picks one of these
+supported by PythonPlot.  (Obviously, you must have installed one of these
+toolkits for Python first.)  By default, PythonPlot picks one of these
 when it starts up (based on what you have installed), but you can
 force a specific toolkit to be chosen by importing the PyCall module
 and using its `pygui` function to set a Python backend *before*
-importing PyPlot:
+importing PythonPlot:
 ```
 using PyCall
 pygui(gui)
-using PyPlot
+using PythonPlot
 ```
 where `gui` can currently be one of `:tk`, `:gtk3`, `:gtk`, `:qt5`, `:qt4`, `:qt`, or `:wx`. You can
 also set a default via the Matplotlib `rcParams['backend']` parameter in your
@@ -194,7 +144,7 @@ also set a default via the Matplotlib `rcParams['backend']` parameter in your
 
 ## Color maps
 
-The PyPlot module also exports some functions and types based on the
+The PythonPlot module also exports some functions and types based on the
 [matplotlib.colors](http://matplotlib.org/api/colors_api.html) and
 [matplotlib.cm](http://matplotlib.org/api/cm_api.html) modules to
 simplify management of color maps (which are used to assign values to
@@ -223,7 +173,7 @@ try `get_cmaps()`!
 
 ## 3d Plotting
 
-The PyPlot package also imports functions from Matplotlib's
+The PythonPlot package also imports functions from Matplotlib's
 [mplot3d](http://matplotlib.org/mpl_toolkits/mplot3d/) toolkit.
 Unlike Matplotlib, however, you can create 3d plots directly without
 first creating an
@@ -260,7 +210,7 @@ interpreting the dollar signs and backslashes itself; for example, the
 LaTeX equation `$\alpha + \beta$` would be the literal string
 `"\$\\alpha + \\beta\$"` in Julia.
 
-To simplify this, PyPlot uses the [LaTeXStrings package](https://github.com/stevengj/LaTeXStrings.jl) to provide a new `LaTeXString` type that
+To simplify this, PythonPlot uses the [LaTeXStrings package](https://github.com/stevengj/LaTeXStrings.jl) to provide a new `LaTeXString` type that
 be constructed via `L"...."` without escaping backslashes or dollar
 signs.  For example, one can simply write `L"$\alpha + \beta$"` for the
 abovementioned equation, and thus you can do things like:
@@ -276,21 +226,21 @@ information.
 ## SVG output in IJulia
 
 By default, plots in IJulia are sent to the notebook as PNG images.
-Optionally, you can tell PyPlot to display plots in the browser as
+Optionally, you can tell PythonPlot to display plots in the browser as
 [SVG](https://en.wikipedia.org/wiki/Scalable_Vector_Graphics) images,
 which have the advantage of being resolution-independent (so that they
 display without pixellation at high-resolutions, for example if you
 convert an IJulia notebook to PDF), by running:
 ```
-PyPlot.svg(true)
+PythonPlot.svg(true)
 ```
 This is not the default because SVG plots in the browser are much
 slower to display (especially for complex plots) and may display
-inaccurately in some browsers with buggy SVG support.  The `PyPlot.svg()`
+inaccurately in some browsers with buggy SVG support.  The `PythonPlot.svg()`
 method returns whether SVG display is currently enabled.
 
 Note that this is entirely separate from manually exporting plots to SVG
-or any other format.  Regardless of whether PyPlot uses SVG for
+or any other format.  Regardless of whether PythonPlot uses SVG for
 browser display, you can export a plot to SVG at any time by using the
 Matplotlib
 [savefig](http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.savefig)
@@ -299,11 +249,8 @@ command, e.g. `savefig("plot.svg")`.
 ## Modifying matplotlib.rcParams
 You can mutate the `rcParams` dictionary that Matplotlib uses for global parameters following this example:
 ```jl
-rcParams = PyPlot.PyDict(PyPlot.matplotlib."rcParams")
-rcParams["font.size"] = 15
+PythonPlot.matplotlib.rcParams["font.size"] = 15
 ```
-(If you instead used `PyPlot.matplotlib.rcParams`, PyCall would make a copy of the dictionary
-so that the Python `rcParams` wouldn't be modified.)
 
 ## Author
 
