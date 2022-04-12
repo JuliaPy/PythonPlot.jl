@@ -310,4 +310,4 @@ end
 using LaTeXStrings
 export LaTeXString, latexstring, @L_str, @L_mstr
 
-end # module PyPlot
+end # module PythonPlot

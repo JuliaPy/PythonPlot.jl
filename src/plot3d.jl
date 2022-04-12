@@ -16,8 +16,8 @@ Base.hasproperty(m::LazyPyModule, x::Symbol) = PyCall.hasproperty(Py(m), x)
 Base.propertynames(m::LazyPyModule) = propertynames(Py(m))
 
 ###########################################################################
-# Lazily load mplot3d modules.  This (slightly) improves load time of PyPlot,
-# and it also allows PyPlot to load on systems where mplot3d is not installed.
+# Lazily load mplot3d modules.  This (slightly) improves load time of PythonPlot,
+# and it also allows PythonPlot to load on systems where mplot3d is not installed.
 
 const axes3D = LazyPyModule("mpl_toolkits.mplot3d.axes3d")
 const art3D = LazyPyModule("mpl_toolkits.mplot3d.art3d")

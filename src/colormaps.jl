@@ -151,7 +151,7 @@ register_cmap(n::AbstractString, c::ColorMap) = cm_register_cmap(n,c)
 get_cmaps() =
     ColorMap[get_cmap(c) for c in
              sort(filter!(c -> !endswith(c, "_r"),
-                          [pyconvert(String, c) for c in PyPlot.cm.datad]),
+                          [pyconvert(String, c) for c in cm.datad]),
                   by=lowercase)]
 
 ########################################################################

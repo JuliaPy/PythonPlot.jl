@@ -1,4 +1,4 @@
-# PyPlot initialization — the hardest part is finding a working backend.
+# PythonPlot initialization — the hardest part is finding a working backend.
 using VersionParsing
 
 ###########################################################################
@@ -143,7 +143,7 @@ backend = "Agg"
 gui = :default
 
 # initialization -- anything that depends on Python has to go here,
-# so that it occurs at runtime (while the rest of PyPlot can be precompiled).
+# so that it occurs at runtime (while the rest of PythonPlot can be precompiled).
 function __init__()
     isjulia_display[] = isdisplayok()
     PythonCall.pycopy!(matplotlib, pyimport("matplotlib"))
@@ -159,7 +159,7 @@ function __init__()
     global backend = backend_gui[1]
     global gui = backend_gui[2]
     if Sys.isapple() && gui == :tk
-        @warn "PyPlot is using tkagg backend, which is known to cause crashes on MacOS (#410); use the MPLBACKEND environment variable to request a different backend."
+        @warn "PythonPlot is using tkagg backend, which is known to cause crashes on MacOS (#410); use the MPLBACKEND environment variable to request a different backend."
     end
 
     PythonCall.pycopy!(plt, pyimport("matplotlib.pyplot")) # raw Python module
