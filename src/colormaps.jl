@@ -139,7 +139,7 @@ ColorMap(c::AbstractMatrix{T}, n=max(256, size(c,1)), gamma=1.0) where {T<:Real}
 ########################################################################
 
 @doc LazyHelp(cm_get_cmap) get_cmap() = ColorMap(cm_get_cmap())
-get_cmap(name::AbstractString) = ColorMap(pycall(cm_get_cmap(name)))
+get_cmap(name::AbstractString) = ColorMap(cm_get_cmap(name))
 get_cmap(name::AbstractString, lut::Integer) = ColorMap(cm_get_cmap(name, lut))
 get_cmap(c::ColorMap) = c
 ColorMap(name::AbstractString) = get_cmap(name)
