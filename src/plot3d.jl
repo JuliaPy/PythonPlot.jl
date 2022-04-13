@@ -8,7 +8,7 @@ mutable struct LazyPyModule
 end
 
 _ispynull(x::Py) = PythonCall.getptr(x) == PythonCall.C.PyNULL
-PythonCall.Py(m::LazyPyModule) = _ispynull(getfield(m, :o)) ? pycopy!(getfield(m, :o), pyimport(getfield(m, :name))) : getfield(m, :o)
+PythonCall.Py(m::LazyPyModule) = _ispynull(getfield(m, :o)) ? PythonCall.pycopy!(getfield(m, :o), pyimport(getfield(m, :name))) : getfield(m, :o)
 Base.Docs.doc(m::LazyPyModule) = Base.Docs.Text(pyconvert(String, Py(m).__doc__))
 Base.getproperty(m::LazyPyModule, x::Symbol) = getproperty(Py(m), x)
 Base.setproperty!(m::LazyPyModule, x::Symbol, v) = setproperty!(Py(m), x, v)
