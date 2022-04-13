@@ -9,7 +9,7 @@
 # global variable to specify default GUI toolkit to use
 gui = :default # one of :default, :wx, :qt, :tk, or :gtk
 
-pyexists(mod::AbstractString) = pyconvert(Bool, pyimport("importlib").util.find_spec(mod) == Py(nothing))
+pyexists(mod::AbstractString) = pyconvert(Bool, pyimport("importlib").util.find_spec(mod) != Py(nothing))
 
 pygui_works(gui::Symbol) = gui == :default ||
     ((gui == :wx && pyexists("wx")) ||

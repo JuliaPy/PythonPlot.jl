@@ -47,8 +47,6 @@ function find_backend(matplotlib::Py)
                           :qt5=>"Qt5Agg", :qt=>"Qt4Agg",:tk=>"TkAgg")
     if Sys.islinux()
         guis = [:tk, :gtk3, :gtk, :qt5, :qt4, :wx]
-    elseif Sys.isapple()
-        guis = [:qt5, :qt4, :wx, :gtk, :gtk3, :tk] # issue #410
     else
         guis = [:tk, :qt5, :qt4, :wx, :gtk, :gtk3]
     end
@@ -84,7 +82,8 @@ function find_backend(matplotlib::Py)
             ENV["DISPLAY"]
         end
 
-        if gui == :default
+        global gui
+        if gui === :default
             # try to ensure that GUI both exists and has a matplotlib backend
             for (g,b) in options
                 if g == :none # Matplotlib is configured to be non-interactive
@@ -158,9 +157,6 @@ function __init__()
     # workaround JuliaLang/julia#8925
     global backend = backend_gui[1]
     global gui = backend_gui[2]
-    if Sys.isapple() && gui == :tk
-        @warn "PythonPlot is using tkagg backend, which is known to cause crashes on MacOS (#410); use the MPLBACKEND environment variable to request a different backend."
-    end
 
     PythonCall.pycopy!(plt, pyimport("matplotlib.pyplot")) # raw Python module
     PythonCall.pycopy!(Gcf, pyimport("matplotlib._pylab_helpers").Gcf)
