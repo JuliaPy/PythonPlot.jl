@@ -1,4 +1,5 @@
 # The PythonPlot module for Julia
+[![CI](https://github.com/stevengj/PythonPlot.jl/workflows/CI/badge.svg)](https://github.com/stevengj/PythonPlot.jl/actions?query=workflow%3ACI)
 
 This module provides a Julia interface to the
 [Matplotlib](http://matplotlib.org/) plotting library from Python, and
