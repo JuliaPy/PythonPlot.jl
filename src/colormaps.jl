@@ -13,9 +13,8 @@ end
 
 PythonCall.Py(c::ColorMap) = getfield(c, :o)
 PythonCall.pyconvert(::Type{ColorMap}, o::Py) = ColorMap(o)
-Base.:(==)(c::ColorMap, g::ColorMap) = Py(c) == Py(g)
-Base.:(==)(c::Py, g::ColorMap) = c == Py(g)
-Base.:(==)(c::ColorMap, g::Py) = Py(c) == g
+Base.:(==)(c::ColorMap, g::ColorMap) = pyconvert(Bool, Py(c) == Py(g))
+Base.isequal(c::ColorMap, g::ColorMap) = isequal(Py(c), Py(g))
 Base.hash(c::ColorMap, h::UInt) = hash(Py(c), h)
 PythonCall.pycall(c::ColorMap, args...; kws...) = pycall(Py(c), args...; kws...)
 (c::ColorMap)(args...; kws...) = pycall(Py(c), args...; kws...)
