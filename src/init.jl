@@ -8,7 +8,7 @@ using VersionParsing
 # so that their type is known at compile-time.
 
 const matplotlib = PythonCall.pynew()
-const plt = PythonCall.pynew()
+const pyplot = PythonCall.pynew()
 const Gcf = PythonCall.pynew()
 const orig_draw = PythonCall.pynew()
 const orig_gcf = PythonCall.pynew()
@@ -158,12 +158,12 @@ function __init__()
     global backend = backend_gui[1]
     global gui = backend_gui[2]
 
-    PythonCall.pycopy!(plt, pyimport("matplotlib.pyplot")) # raw Python module
+    PythonCall.pycopy!(pyplot, pyimport("matplotlib.pyplot")) # raw Python module
     PythonCall.pycopy!(Gcf, pyimport("matplotlib._pylab_helpers").Gcf)
-    PythonCall.pycopy!(orig_gcf, plt.gcf)
-    PythonCall.pycopy!(orig_figure, plt.figure)
-    plt.gcf = gcf
-    plt.figure = figure
+    PythonCall.pycopy!(orig_gcf, pyplot.gcf)
+    PythonCall.pycopy!(orig_figure, pyplot.figure)
+    pyplot.gcf = gcf
+    pyplot.figure = figure
 
     if isdefined(Main, :IJulia) && Main.IJulia.inited
         Main.IJulia.push_preexecute_hook(force_new_fig)
@@ -172,8 +172,8 @@ function __init__()
     end
 
     if isjulia_display[] && gui != :gr && backend != "Agg"
-        plt.switch_backend("Agg")
-        plt.ioff()
+        pyplot.switch_backend("Agg")
+        pyplot.ioff()
     end
 
     init_colormaps()
@@ -182,12 +182,12 @@ end
 function pygui(b::Bool)
     if !b != isjulia_display[]
         if backend != "Agg"
-            plt.switch_backend(b ? backend : "Agg")
+            pyplot.switch_backend(b ? backend : "Agg")
             if b
                 pygui_start(gui) # make sure event loop is started
-                Base.isinteractive() && plt.ion()
+                Base.isinteractive() && pyplot.ion()
             else
-                plt.ioff()
+                pyplot.ioff()
             end
         elseif b
             error("No working GUI backend found for matplotlib.")
