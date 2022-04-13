@@ -2,9 +2,6 @@
 """
 PythonPlot allows Julia to interface with the Matplotlib library in Python, specifically the matplotlib.pyplot module, so you can create beautiful plots in Julia with your favorite Python package.
 
-Only the currently documented matplotlib.pyplot API is exported. To use other functions in the module, you can also call matplotlib.pyplot.foo(...) as plt.foo(...).
-For example, plt.plot(x, y) also works. (And the raw Py object for the matplotlib modules is also accessible as PythonPlot.matplotlib.)
-
 In general, all the arguments are the same as in Python.
 
 Here's a brief demo of a simple plot in Julia:
@@ -19,8 +16,7 @@ For more information on API, see the matplotlib.pyplot documentation and the Pyt
 module PythonPlot
 
 using PythonCall
-import Base: convert, ==, isequal, hash, getindex, setindex!, haskey, keys, show
-export Figure, plt, matplotlib, pygui, withfig
+export Figure, matplotlib, pyplot, pygui, withfig, pltshow, pltstep, pltclose
 
 ###########################################################################
 # Define a documentation object
@@ -46,11 +42,11 @@ function Base.show(io::IO, ::MIME"text/plain", h::LazyHelp)
         print(io, "no Python docstring found for ", o)
     end
 end
-Base.show(io::IO, h::LazyHelp) = show(io, "text/plain", h)
+Base.show(io::IO, h::LazyHelp) = Base.show(io, "text/plain", h)
 function Base.Docs.catdoc(hs::LazyHelp...)
     Base.Docs.Text() do io
         for h in hs
-            show(io, MIME"text/plain"(), h)
+            Base.show(io, MIME"text/plain"(), h)
         end
     end
 end
@@ -68,10 +64,9 @@ mutable struct Figure
 end
 PythonCall.Py(f::Figure) = getfield(f, :o)
 PythonCall.pyconvert(::Type{Figure}, o::Py) = Figure(o)
-==(f::Figure, g::Figure) = Py(f) == Py(g)
-==(f::Figure, g::Py) = Py(f) == g
-==(f::Py, g::Figure) = f == Py(g)
-hash(f::Figure) = hash(Py(f))
+Base.:(==)(f::Figure, g::Figure) = pyconvert(Bool, Py(f) == Py(g))
+Base.isequal(f::Figure, g::Figure) = isequal(Py(f), Py(g))
+Base.hash(f::Figure, h::UInt) = hash(Py(f), h)
 PythonCall.pycall(f::Figure, args...; kws...) = pycall(Py(f), args...; kws...)
 (f::Figure)(args...; kws...) = pycall(Py(f), PyAny, args...; kws...)
 Base.Docs.doc(f::Figure) = Base.Docs.Text(pyconvert(String, Py(f).__doc__))
@@ -88,7 +83,7 @@ for (mime,fmt) in aggformats
     @eval _showable(::MIME{Symbol($mime)}, f::Figure) = !isempty(f) && haskey(PyDict{Any,Any}(f.canvas.get_supported_filetypes()), $fmt)
     @eval function Base.show(io::IO, m::MIME{Symbol($mime)}, f::Figure)
         if !_showable(m, f)
-            throw(MethodError(show, (io, m, f)))
+            throw(MethodError(Base.show, (io, m, f)))
         end
         f.canvas.print_figure(io, format=$fmt, bbox_inches="tight")
     end
@@ -127,7 +122,7 @@ function display_figs() # called after IJulia cell executes
             if pyconvert(Int, f.number) ∉ withfig_fignums
                 fig = Figure(f)
                 isempty(fig) || display(fig)
-                plt.close(f)
+                pyplot.close(f)
             end
         end
     end
@@ -138,7 +133,7 @@ function close_figs() # called after error in IJulia cell
         for manager in Gcf.get_all_fig_managers()
             f = manager.canvas.figure
             if pyconvert(Int, f.number) ∉ withfig_fignums
-                plt.close(f)
+                pyplot.close(f)
             end
         end
     end
@@ -168,47 +163,56 @@ end
 ###########################################################################
 
 # export documented pyplot API (http://matplotlib.org/api/pyplot_api.html)
-export acorr,annotate,arrow,autoscale,autumn,axhline,axhspan,axis,axline,axvline,axvspan,bar,barbs,barh,bone,box,boxplot,broken_barh,cla,clabel,clf,clim,cohere,colorbar,colors,contour,contourf,cool,copper,csd,delaxes,disconnect,draw,errorbar,eventplot,figaspect,figimage,figlegend,figtext,figure,fill_between,fill_betweenx,findobj,flag,gca,gcf,gci,get_current_fig_manager,get_figlabels,get_fignums,get_plot_commands,ginput,gray,grid,hexbin,hist2D,hlines,hold,hot,hsv,imread,imsave,imshow,ioff,ion,ishold,jet,legend,locator_params,loglog,margins,matshow,minorticks_off,minorticks_on,over,pause,pcolor,pcolormesh,pie,pink,plot,plot_date,plotfile,polar,prism,psd,quiver,quiverkey,rc,rc_context,rcdefaults,rgrids,savefig,sca,scatter,sci,semilogx,semilogy,set_cmap,setp,show,specgram,spectral,spring,spy,stackplot,stem,step,streamplot,subplot,subplot2grid,subplot_tool,subplots,subplots_adjust,summer,suptitle,table,text,thetagrids,tick_params,ticklabel_format,tight_layout,title,tricontour,tricontourf,tripcolor,triplot,twinx,twiny,vlines,waitforbuttonpress,winter,xkcd,xlabel,xlim,xscale,xticks,ylabel,ylim,yscale,yticks,hist
+export acorr,annotate,arrow,autoscale,autumn,axhline,axhspan,axis,axline,axvline,axvspan,bar,barbs,barh,bone,box,boxplot,broken_barh,cla,clabel,clf,clim,cohere,colorbar,colors,contour,contourf,cool,copper,csd,delaxes,disconnect,draw,errorbar,eventplot,figaspect,figimage,figlegend,figtext,figure,fill_between,fill_betweenx,findobj,flag,gca,gcf,gci,get_current_fig_manager,get_figlabels,get_fignums,get_plot_commands,ginput,gray,grid,hexbin,hist2D,hlines,hold,hot,hsv,imread,imsave,imshow,ioff,ion,ishold,jet,legend,locator_params,loglog,margins,matshow,minorticks_off,minorticks_on,over,pause,pcolor,pcolormesh,pie,pink,plot,plot_date,plotfile,polar,prism,psd,quiver,quiverkey,rc,rc_context,rcdefaults,rgrids,savefig,sca,scatter,sci,semilogx,semilogy,set_cmap,setp,specgram,spectral,spring,spy,stackplot,stem,step,streamplot,subplot,subplot2grid,subplot_tool,subplots,subplots_adjust,summer,suptitle,table,text,thetagrids,tick_params,ticklabel_format,tight_layout,title,tricontour,tricontourf,tripcolor,triplot,twinx,twiny,vlines,waitforbuttonpress,winter,xkcd,xlabel,xlim,xscale,xticks,ylabel,ylim,yscale,yticks,hist
 
 # The following pyplot functions must be handled specially since they
 # overlap with standard Julia functions:
 #          close, fill, show, step
-# … as in PyPlot.jl, we commit some type piracy here.
+# … unlike PyPlot.jl, we'll avoid type piracy by renaming / not exporting.
 
 const plt_funcs = (:acorr,:annotate,:arrow,:autoscale,:autumn,:axes,:axhline,:axhspan,:axis,:axline,:axvline,:axvspan,:bar,:barbs,:barh,:bone,:box,:boxplot,:broken_barh,:cla,:clabel,:clf,:clim,:cohere,:colorbar,:colors,:connect,:contour,:contourf,:cool,:copper,:csd,:delaxes,:disconnect,:draw,:errorbar,:eventplot,:figaspect,:figimage,:figlegend,:figtext,:fill_between,:fill_betweenx,:findobj,:flag,:gca,:gci,:get_current_fig_manager,:get_figlabels,:get_fignums,:get_plot_commands,:ginput,:gray,:grid,:hexbin,:hlines,:hold,:hot,:hsv,:imread,:imsave,:imshow,:ioff,:ion,:ishold,:jet,:legend,:locator_params,:loglog,:margins,:matshow,:minorticks_off,:minorticks_on,:over,:pause,:pcolor,:pcolormesh,:pie,:pink,:plot,:plot_date,:plotfile,:polar,:prism,:psd,:quiver,:quiverkey,:rc,:rc_context,:rcdefaults,:rgrids,:savefig,:sca,:scatter,:sci,:semilogx,:semilogy,:set_cmap,:setp,:specgram,:spectral,:spring,:spy,:stackplot,:stem,:streamplot,:subplot,:subplot2grid,:subplot_tool,:subplots,:subplots_adjust,:summer,:suptitle,:table,:text,:thetagrids,:tick_params,:ticklabel_format,:tight_layout,:title,:tricontour,:tricontourf,:tripcolor,:triplot,:twinx,:twiny,:vlines,:waitforbuttonpress,:winter,:xkcd,:xlabel,:xlim,:xscale,:xticks,:ylabel,:ylim,:yscale,:yticks,:hist,:xcorr,:isinteractive)
 
 for f in plt_funcs
     sf = string(f)
-    @eval @doc LazyHelp(plt,$sf) function $f(args...; kws...)
-        if !hasproperty(plt, $(QuoteNode(f)))
+    @eval @doc LazyHelp(pyplot,$sf) function $f(args...; kws...)
+        if !hasproperty(pyplot, $(QuoteNode(f)))
             error("matplotlib ", version, " does not have pyplot.", $sf)
         end
-        return pycall(plt.$f, args...; kws...)
+        return pycall(pyplot.$f, args...; kws...)
     end
 end
 
-# type piracy as in PyPlot.jl:
-@doc LazyHelp(plt,"step") Base.step(x, y; kws...) = pycall(plt.step, x, y; kws...)
+# rename to avoid type piracy:
+@doc LazyHelp(pyplot,"step") pltstep(x, y; kws...) = pycall(pyplot.step, x, y; kws...)
 
-# type piracy as in PyPlot.jl:
-Base.show(; kws...) = begin pycall(plt.show; kws...); nothing; end
+# rename to avoid type piracy:
+pltshow(; kws...) = begin pycall(pyplot.show; kws...); nothing; end
 
-Base.close(f::Figure) = close(f.number)
+Base.close(f::Figure) = pltclose(f)
 
-# type piracy as in PyPlot.jl:
-function Base.close(f::Integer)
+# rename to avoid type piracy:
+@doc LazyHelp(pyplot,"close") pltclose() = pyplot.close()
+pltclose(f::Figure) = pyconvert(Int, pltclose(f.number))
+function pltclose(f::Integer)
     pop!(withfig_fignums, f, f)
-    plt.close(f)
+    pyplot.close(f)
 end
-Base.close(f::Union{AbstractString,Symbol}) = plt.close(f)
-@doc LazyHelp(plt,"close") Base.close() = plt.close()
+pltclose(f::AbstractString) = pyplot.close(f)
 
-# type piracy as in PyPlot.jl:
-@doc LazyHelp(plt,"fill") Base.fill(x::AbstractArray,y::AbstractArray, args...; kws...) =
-    pycall(plt."fill", PyAny, x, y, args...; kws...)
+# rename to avoid type piracy:
+@doc LazyHelp(pyplot,"fill") pltfill(x::AbstractArray,y::AbstractArray, args...; kws...) =
+    pycall(pyplot.fill, PyAny, x, y, args...; kws...)
 
 # consistent capitalization with mplot3d
-@doc LazyHelp(plt,"hist2d") hist2D(args...; kws...) = pycall(plt.hist2d, args...; kws...)
+@doc LazyHelp(pyplot,"hist2d") hist2D(args...; kws...) = pycall(pyplot.hist2d, args...; kws...)
+
+# allow them to be accessed via their original names foo
+# as PythonPlot.foo … this also means that we must be careful
+# to use them as Base.foo in this module as needed!
+const close = pltclose
+const fill = pltfill
+const show = pltshow
+const step = pltstep
 
 include("colormaps.jl")
 
@@ -287,7 +291,7 @@ function withfig(actions::Function, f::Figure; clear=true)
     ax_save = gca()
     push!(withfig_fignums, f.number)
     figure(f.number)
-    finalizer(close, f)
+    finalizer(pltclose, f)
     try
         if clear && !isempty(f)
             clf()

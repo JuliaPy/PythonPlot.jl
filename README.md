@@ -52,12 +52,20 @@ see the [matplotlib.pyplot documentation for more
 information](http://matplotlib.org/api/pyplot_api.html).  The Matplotlib
 version number is returned by `PythonPlot.version`.
 
+### Differences from PyPlot
+
+Compared to the PyPlot package, there are a few differences in the API.
+
+* To avoid type piracy, the functions `show`, `close`, `step`, and `fill` are renamed to `pltshow`, `pltclose`, `pltstep`, and `pltfill`, respectively.  (You can also access them as `PythonPlot.show` etcetera.)
+* The `matplotlibl.pyplot` module is exported as `pyplot` rather than as `plt`.
+* The PythonCall package performs many fewer automatic conversions from Python types to Julia types (in comparison to PyCall).   If you need to convert Matplotlib return values to native Julia objects, you'll need to do `using PythonCall` and call its `pyconvert(T, o)` or other conversion functions.
+
 ### Exported functions
 
 Only the currently documented `matplotlib.pyplot` API is exported.  To use
 other functions in the module, you can also call `matplotlib.pyplot.foo(...)`
-as `plt.foo(...)`.  For example, `plt.plot(x, y)` also works.  (And
-the raw `Py` object for the `matplotlib` modules is also accessible
+as `pyplot.foo(...)`.  For example, `pyplot.plot(x, y)` also works.  (And
+the raw `Py` object for the `matplotlib` module itself is also accessible
 as `PythonPlot.matplotlib`.)
 
 Matplotlib is somewhat inconsistent about capitalization: it has
@@ -71,8 +79,8 @@ must be used to access `matplotlib.pyplot.xcorr`
 etcetera.
 
 If you wish to access *all* of the PyPlot functions exclusively
-through `plt.somefunction(...)`, as is conventional in Python, you can
-do `import PythonPlot as plt` instead of `using PythonPlot`.
+through `pyplot.somefunction(...)`, as is conventional in Python, you can
+do `import PythonPlot as pyplot` instead of `using PythonPlot`.
 
 ### Figure objects
 
@@ -96,7 +104,7 @@ function (`plot` etc.) is evaluated.
 However, if you use PythonPlot from a Julia script that is run non-interactively
 (e.g. `julia myscript.jl`), then Matplotlib is executed in
 [non-interactive mode](http://matplotlib.org/faq/usage_faq.html#what-is-interactive-mode):
-a plot window is not opened until you run `show()` (equivalent to `plt.show()`
+a plot window is not opened until you run `pyshow()` (equivalent to `pyplot.show()`
 in the Python examples).
 
 ## Interactive versus Julia graphics

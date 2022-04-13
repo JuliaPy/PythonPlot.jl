@@ -13,10 +13,9 @@ end
 
 PythonCall.Py(c::ColorMap) = getfield(c, :o)
 PythonCall.pyconvert(::Type{ColorMap}, o::Py) = ColorMap(o)
-==(c::ColorMap, g::ColorMap) = Py(c) == Py(g)
-==(c::Py, g::ColorMap) = c == Py(g)
-==(c::ColorMap, g::Py) = Py(c) == g
-hash(c::ColorMap) = hash(Py(c))
+Base.:(==)(c::ColorMap, g::ColorMap) = pyconvert(Bool, Py(c) == Py(g))
+Base.isequal(c::ColorMap, g::ColorMap) = isequal(Py(c), Py(g))
+Base.hash(c::ColorMap, h::UInt) = hash(Py(c), h)
 PythonCall.pycall(c::ColorMap, args...; kws...) = pycall(Py(c), args...; kws...)
 (c::ColorMap)(args...; kws...) = pycall(Py(c), args...; kws...)
 Base.Docs.doc(c::ColorMap) = Base.Docs.Text(pyconvert(String, Py(c).__doc__))
@@ -29,7 +28,7 @@ Base.setproperty!(c::ColorMap, s::AbstractString, x) = setproperty!(Py(c), Symbo
 Base.propertynames(c::ColorMap) = propertynames(Py(c))
 Base.hasproperty(c::ColorMap, s::Union{Symbol,AbstractString}) = hasproperty(Py(c), s)
 
-function show(io::IO, c::ColorMap)
+function Base.show(io::IO, c::ColorMap)
     print(io, "ColorMap \"$(pyconvert(String, c.name))\"")
 end
 
@@ -187,7 +186,7 @@ function Base.show(io::IO, ::MIME"image/svg+xml", cs::AbstractVector{ColorMap})
 end
 
 function Base.show(io::IO, m::MIME"image/svg+xml", c::ColorMap)
-    show(io, m, [c])
+    Base.show(io, m, [c])
 end
 
 ########################################################################
