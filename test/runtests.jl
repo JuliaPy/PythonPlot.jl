@@ -2,20 +2,21 @@ ENV["MPLBACKEND"]="agg" # no GUI
 
 using PythonPlot, PythonCall, Test
 
-@info("PythonPlot is using Matplotlib $(PythonPlot.version) with Python $(PyCall.pyversion)")
+pyversion = pyconvert(String, pyimport("sys").version)
+@info("PythonPlot is using Matplotlib $(PythonPlot.version) with Python $pyversion")
 
 plot(1:5, 2:6, "ro-")
 
-line = gca().lines[1]
-@test line.get_xdata() == [1:5;]
-@test line.get_ydata() == [2:6;]
+line = gca().lines[0]
+@test PyArray(line.get_xdata()) == 1:5
+@test PyArray(line.get_ydata()) == 2:6
 
 fig = gcf()
 @test isa(fig, PythonPlot.Figure)
 if PythonPlot.version >= v"2"
-    @test fig.get_size_inches() ≈ [6.4, 4.8]
+    @test PyArray(fig.get_size_inches()) ≈ [6.4, 4.8]
 else # matplotlib 1.3
-    @test fig.get_size_inches() ≈ [8, 6]
+    @test PyArray(fig.get_size_inches()) ≈ [8, 6]
 end
 
 # with Matplotlib 1.3, I get "UserWarning: bbox_inches option for ps backend is not implemented yet"
