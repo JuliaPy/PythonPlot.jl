@@ -56,7 +56,7 @@ version number is returned by `PythonPlot.version`.
 
 Compared to the PyPlot.jl package, there are a few differences in the API.
 
-* To avoid type piracy, the functions `show`, `close`, `step`, and `fill` are renamed to `pltshow`, `pltclose`, `pltstep`, and `pltfill`, respectively.  (You can also access them as `PythonPlot.show` etcetera.)
+* To avoid type piracy, the functions `show`, `close`, `step`, and `fill` are renamed to `plotshow`, `plotclose`, `plotstep`, and `plotfill`, respectively.  (You can also access them as `PythonPlot.show` etcetera.)
 * The `matplotlibl.pyplot` module is exported as `pyplot` rather than as `plt`.
 * The PythonCall package performs many fewer automatic conversions from Python types to Julia types (in comparison to PyCall).   If you need to convert Matplotlib return values to native Julia objects, you'll need to do `using PythonCall` and call its `pyconvert(T, o)` or other conversion functions.
 
@@ -104,7 +104,7 @@ function (`plot` etc.) is evaluated.
 However, if you use PythonPlot from a Julia script that is run non-interactively
 (e.g. `julia myscript.jl`), then Matplotlib is executed in
 [non-interactive mode](http://matplotlib.org/faq/usage_faq.html#what-is-interactive-mode):
-a plot window is not opened until you run `pyshow()` (equivalent to `pyplot.show()`
+a plot window is not opened until you run `plotshow()` (equivalent to `pyplot.show()`
 in the Python examples).
 
 ## Interactive versus Julia graphics

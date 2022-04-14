@@ -16,7 +16,7 @@ For more information on API, see the matplotlib.pyplot documentation and the Pyt
 module PythonPlot
 
 using PythonCall
-export Figure, matplotlib, pyplot, pygui, withfig, pltshow, pltstep, pltclose
+export Figure, matplotlib, pyplot, pygui, withfig, plotshow, plotstep, plotclose
 
 ###########################################################################
 # Define a documentation object
@@ -183,24 +183,24 @@ for f in plt_funcs
 end
 
 # rename to avoid type piracy:
-@doc LazyHelp(pyplot,"step") pltstep(x, y; kws...) = pycall(pyplot.step, x, y; kws...)
+@doc LazyHelp(pyplot,"step") plotstep(x, y; kws...) = pycall(pyplot.step, x, y; kws...)
 
 # rename to avoid type piracy:
-pltshow(; kws...) = begin pycall(pyplot.show; kws...); nothing; end
+plotshow(; kws...) = begin pycall(pyplot.show; kws...); nothing; end
 
-Base.close(f::Figure) = pltclose(f)
+Base.close(f::Figure) = plotclose(f)
 
 # rename to avoid type piracy:
-@doc LazyHelp(pyplot,"close") pltclose() = pyplot.close()
-pltclose(f::Figure) = pyconvert(Int, pltclose(f.number))
-function pltclose(f::Integer)
+@doc LazyHelp(pyplot,"close") plotclose() = pyplot.close()
+plotclose(f::Figure) = pyconvert(Int, plotclose(f.number))
+function plotclose(f::Integer)
     pop!(withfig_fignums, f, f)
     pyplot.close(f)
 end
-pltclose(f::AbstractString) = pyplot.close(f)
+plotclose(f::AbstractString) = pyplot.close(f)
 
 # rename to avoid type piracy:
-@doc LazyHelp(pyplot,"fill") pltfill(x::AbstractArray,y::AbstractArray, args...; kws...) =
+@doc LazyHelp(pyplot,"fill") plotfill(x::AbstractArray,y::AbstractArray, args...; kws...) =
     pycall(pyplot.fill, PyAny, x, y, args...; kws...)
 
 # consistent capitalization with mplot3d
@@ -209,10 +209,10 @@ pltclose(f::AbstractString) = pyplot.close(f)
 # allow them to be accessed via their original names foo
 # as PythonPlot.foo … this also means that we must be careful
 # to use them as Base.foo in this module as needed!
-const close = pltclose
-const fill = pltfill
-const show = pltshow
-const step = pltstep
+const close = plotclose
+const fill = plotfill
+const show = plotshow
+const step = plotstep
 
 include("colormaps.jl")
 
@@ -291,7 +291,7 @@ function withfig(actions::Function, f::Figure; clear=true)
     ax_save = gca()
     push!(withfig_fignums, f.number)
     figure(f.number)
-    finalizer(pltclose, f)
+    finalizer(plotclose, f)
     try
         if clear && !isempty(f)
             clf()
