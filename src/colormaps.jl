@@ -26,7 +26,7 @@ Base.getproperty(c::ColorMap, s::AbstractString) = getproperty(Py(c), Symbol(s))
 Base.setproperty!(c::ColorMap, s::Symbol, x) = setproperty!(Py(c), s, x)
 Base.setproperty!(c::ColorMap, s::AbstractString, x) = setproperty!(Py(c), Symbol(s), x)
 Base.propertynames(c::ColorMap) = propertynames(Py(c))
-Base.hasproperty(c::ColorMap, s::Union{Symbol,AbstractString}) = hasproperty(Py(c), s)
+Base.hasproperty(c::ColorMap, s::Union{Symbol,AbstractString}) = pyhasattr(Py(c), s)
 
 function Base.show(io::IO, c::ColorMap)
     print(io, "ColorMap \"$(pyconvert(String, c.name))\"")
