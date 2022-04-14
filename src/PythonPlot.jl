@@ -36,7 +36,7 @@ function Base.show(io::IO, ::MIME"text/plain", h::LazyHelp)
     for k in h.keys
         o = pygetattr(o, k)
     end
-    if hasproperty(o, :__doc__)
+    if pyhasattr(o, "__doc__")
         print(io, pyconvert(String, o.__doc__))
     else
         print(io, "no Python docstring found for ", o)
@@ -76,7 +76,7 @@ Base.getproperty(f::Figure, s::Symbol) = getproperty(Py(f), s)
 Base.getproperty(f::Figure, s::AbstractString) = getproperty(f, Symbol(s))
 Base.setproperty!(f::Figure, s::Symbol, x) = setproperty!(Py(f), s, x)
 Base.setproperty!(f::Figure, s::AbstractString, x) = setproperty!(f, Symbol(s), x)
-Base.hasproperty(f::Figure, s::Symbol) = hasproperty(Py(f), s)
+Base.hasproperty(f::Figure, s::Symbol) = pyhasattr(Py(f), s)
 Base.propertynames(f::Figure) = propertynames(Py(f))
 
 for (mime,fmt) in aggformats
@@ -175,10 +175,10 @@ const plt_funcs = (:acorr,:annotate,:arrow,:autoscale,:autumn,:axes,:axhline,:ax
 for f in plt_funcs
     sf = string(f)
     @eval @doc LazyHelp(pyplot,$sf) function $f(args...; kws...)
-        if !hasproperty(pyplot, $(QuoteNode(f)))
+        if !pyhasattr(pyplot, $sf)
             error("matplotlib ", version, " does not have pyplot.", $sf)
         end
-        return pycall(pyplot.$f, args...; kws...)
+        return pycall(pyplot.$sf, args...; kws...)
     end
 end
 

@@ -12,7 +12,7 @@ PythonCall.Py(m::LazyPyModule) = _ispynull(getfield(m, :o)) ? PythonCall.pycopy!
 Base.Docs.doc(m::LazyPyModule) = Base.Docs.Text(pyconvert(String, Py(m).__doc__))
 Base.getproperty(m::LazyPyModule, x::Symbol) = getproperty(Py(m), x)
 Base.setproperty!(m::LazyPyModule, x::Symbol, v) = setproperty!(Py(m), x, v)
-Base.hasproperty(m::LazyPyModule, x::Symbol) = PyCall.hasproperty(Py(m), x)
+Base.hasproperty(m::LazyPyModule, x::Symbol) = pyhasattr(Py(m), x)
 Base.propertynames(m::LazyPyModule) = propertynames(Py(m))
 
 ###########################################################################
