@@ -52,9 +52,9 @@ see the [matplotlib.pyplot documentation for more
 information](http://matplotlib.org/api/pyplot_api.html).  The Matplotlib
 version number is returned by `PythonPlot.version`.
 
-### Differences from PyPlot
+### Differences from PyPlot.jl
 
-Compared to the PyPlot package, there are a few differences in the API.
+Compared to the PyPlot.jl package, there are a few differences in the API.
 
 * To avoid type piracy, the functions `show`, `close`, `step`, and `fill` are renamed to `pltshow`, `pltclose`, `pltstep`, and `pltfill`, respectively.  (You can also access them as `PythonPlot.show` etcetera.)
 * The `matplotlibl.pyplot` module is exported as `pyplot` rather than as `plt`.
