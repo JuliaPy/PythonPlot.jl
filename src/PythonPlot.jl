@@ -186,7 +186,7 @@ end
 @doc LazyHelp(pyplot,"step") plotstep(x, y; kws...) = pycall(pyplot.step, x, y; kws...)
 
 # rename to avoid type piracy:
-plotshow(; kws...) = begin pycall(pyplot.show; kws...); nothing; end
+@doc LazyHelp(pyplot,"show") plotshow(; kws...) = begin pycall(pyplot.show; kws...); nothing; end
 
 Base.close(f::Figure) = plotclose(f)
 
