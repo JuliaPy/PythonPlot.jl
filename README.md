@@ -57,7 +57,7 @@ version number is returned by `PythonPlot.version`.
 Compared to the PyPlot.jl package, there are a few differences in the API.
 
 * To avoid type piracy, the functions `show`, `close`, `step`, and `fill` are renamed to `plotshow`, `plotclose`, `plotstep`, and `plotfill`, respectively.  (You can also access them as `PythonPlot.show` etcetera.)
-* The `matplotlibl.pyplot` module is exported as `pyplot` rather than as `plt`.
+* The `matplotlib.pyplot` module is exported as `pyplot` rather than as `plt`.
 * The PythonCall package performs many fewer automatic conversions from Python types to Julia types (in comparison to PyCall).   If you need to convert Matplotlib return values to native Julia objects, you'll need to do `using PythonCall` and call its `pyconvert(T, o)` or other conversion functions.
 
 ### Exported functions
