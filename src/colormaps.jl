@@ -75,7 +75,7 @@ function ColorMap(name::Union{AbstractString,Symbol},
                   a::AbstractVector{Tuple{T,T,T}},
                   n=max(256,length(r),length(g),length(b),length(a)),
                   gamma=1.0) where T<:Real
-    segmentdata = Dict("red" => pybuiltins.list(r), "green" => pybuiltins.list(g), "blue" => pybuiltins.list(b))
+    segmentdata = Dict("red" => pylist(r), "green" => pylist(g), "blue" => pylist(b))
     if !isempty(a)
         segmentdata["alpha"] = a
     end
