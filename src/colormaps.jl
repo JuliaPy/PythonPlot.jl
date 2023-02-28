@@ -189,4 +189,9 @@ function Base.show(io::IO, m::MIME"image/svg+xml", c::ColorMap)
     Base.show(io, m, [c])
 end
 
+function Base.show(io::IO, m::MIME"text/html", c::ColorMap)
+    Base.show(io, m, Py(c))
+end
+
+
 ########################################################################
