@@ -67,8 +67,6 @@ PythonCall.pyconvert(::Type{Figure}, o::Py) = Figure(o)
 Base.:(==)(f::Figure, g::Figure) = pyconvert(Bool, Py(f) == Py(g))
 Base.isequal(f::Figure, g::Figure) = isequal(Py(f), Py(g))
 Base.hash(f::Figure, h::UInt) = hash(Py(f), h)
-PythonCall.pycall(f::Figure, args...; kws...) = pycall(Py(f), args...; kws...)
-(f::Figure)(args...; kws...) = pycall(Py(f), PyAny, args...; kws...)
 Base.Docs.doc(f::Figure) = Base.Docs.Text(pyconvert(String, Py(f).__doc__))
 
 # Note: using `Union{Symbol,String}` produces ambiguity.
