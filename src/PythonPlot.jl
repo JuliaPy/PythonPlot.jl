@@ -190,7 +190,7 @@ Base.close(f::Figure) = plotclose(f)
 
 # rename to avoid type piracy:
 @doc LazyHelp(pyplot,"close") plotclose() = pyplot.close()
-plotclose(f::Figure) = pyconvert(Int, plotclose(pyconvert(Int, f.number)))
+plotclose(f::Figure) = pyconvert(Union{Nothing,Int}, plotclose(pyconvert(Int, f.number)))
 function plotclose(f::Integer)
     pop!(withfig_fignums, f, f)
     pyplot.close(f)
