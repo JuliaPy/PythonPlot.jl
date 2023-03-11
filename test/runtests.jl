@@ -38,3 +38,8 @@ rgba = PyArray(pycall(PythonPlot.ScalarMappable; cmap=c, norm=PythonPlot.Normali
                 0.9657054978854287  0.9672433679354094   0.9680891964628989   1.0
                 0.4085351787773935  0.6687427912341408   0.8145328719723184   1.0
                 0.0196078431372549  0.18823529411764706  0.3803921568627451   1.0 ]
+
+@testset "close figure: issue 22" begin
+    f = figure()
+    @test close(f) === nothing
+end
