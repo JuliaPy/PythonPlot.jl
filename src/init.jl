@@ -124,6 +124,7 @@ function find_backend(matplotlib::Py)
             return (gui2matplotlib[gui], gui)
         end
     catch e
+        @warn(e) # provide information for debugging why a gui was not found
         if !isjulia_display[]
             @warn("No working GUI backend found for matplotlib")
             isjulia_display[] = true

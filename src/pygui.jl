@@ -9,7 +9,9 @@
 # global variable to specify default GUI toolkit to use
 gui = :default # one of :default, :wx, :qt, :tk, or :gtk
 
-pyexists(mod::AbstractString) = pyconvert(Bool, pyimport("importlib").util.find_spec(mod) != Py(nothing))
+# for some reason, `util` is not always imported as an attribute to `importlib`:
+#PythonCall.PyException(<py AttributeError("module 'importlib' has no attribute 'util'")>)
+pyexists(mod::AbstractString) = pyconvert(Bool, pyimport("importlib.util").find_spec(mod) != Py(nothing))
 
 pygui_works(gui::Symbol) = gui == :default ||
     ((gui == :wx && pyexists("wx")) ||
@@ -130,7 +132,9 @@ end
 
 # Qt: (PyQt5, PyQt4, or PySide module)
 function qt_eventloop(QtCore::Py, sec::Real=50e-3)
-    fixqtpath()
+    # `fixqtpath()` seems to not be working,
+    # https://github.com/JuliaPy/PythonPlot.jl/issues/17
+    #fixqtpath()
     instance = QtCore.QCoreApplication.instance
     AllEvents = QtCore.QEventLoop.AllEvents
     processEvents = QtCore.QCoreApplication.processEvents
