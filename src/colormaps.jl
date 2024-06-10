@@ -48,8 +48,8 @@ function init_colormaps()
 
     PythonCall.pycopy!(LinearSegmentedColormap, colorsm.LinearSegmentedColormap)
 
-    PythonCall.pycopy!(cm_get_cmap, cm.get_cmap)
-    PythonCall.pycopy!(cm_register_cmap, cm.register_cmap)
+    PythonCall.pycopy!(cm_get_cmap, pyhasattr(pyplot, "get_cmap") ? pyplot.get_cmap : cm.get_cmap)
+    PythonCall.pycopy!(cm_register_cmap, pyhasattr(matplotlib.colormaps, "register") ? matplotlib.colormaps.register : cm.register_cmap)
 
     PythonCall.pycopy!(ScalarMappable, cm.ScalarMappable)
     PythonCall.pycopy!(Normalize01, pycall(colorsm.Normalize; vmin=0,vmax=1))
