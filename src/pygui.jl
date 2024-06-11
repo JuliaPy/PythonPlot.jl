@@ -195,12 +195,15 @@ function Tk_eventloop(sec::Real=50e-3)
     flag = _tkinter.ALL_EVENTS | _tkinter.DONT_WAIT
     root = pynothing = Py(nothing)
     install_doevent(sec) do async
-        new_root = Tk._default_root
-        if pyconvert(Bool, new_root != pynothing)
-            root = new_root
-        end
-        if pyconvert(Bool, root != pynothing)
-            while pyconvert(Bool, root.dooneevent(flag))
+        @show typeof(Tk)
+        if pyhasattr(Tk, "_default_root")
+            new_root = Tk._default_root
+            if pyconvert(Bool, new_root != pynothing)
+                root = new_root
+            end
+            if pyconvert(Bool, root != pynothing)
+                while pyconvert(Bool, root.dooneevent(flag))
+                end
             end
         end
     end
