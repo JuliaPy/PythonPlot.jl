@@ -139,15 +139,15 @@ Only the [Tk](http://www.tcl.tk/), [wxWidgets](http://www.wxwidgets.org/),
 supported by PythonPlot.  (Obviously, you must have installed one of these
 toolkits for Python first.)  By default, PythonPlot picks one of these
 when it starts up (based on what you have installed), but you can
-force a specific toolkit to be chosen by importing the PyCall module
-and using its `pygui` function to set a Python backend *before*
+force a specific toolkit to be chosen by setting the `MPLBACKEND` environment variable
+to the desired Python backend *before*
 importing PythonPlot:
 ```
-using PyCall
-pygui(gui)
+ENV["MPLBACKEND"] = backend
 using PythonPlot
 ```
-where `gui` can currently be one of `:tk`, `:gtk3`, `:gtk`, `:qt5`, `:qt4`, `:qt`, or `:wx`. You can
+where `backend` is typically one of `"wxagg"`, `"gtkagg"`, `"gtk3agg"`, `"qt5agg"`, `"qt4agg"`, or `"tkagg"`.
+You can
 also set a default via the Matplotlib `rcParams['backend']` parameter in your
 [matplotlibrc](http://matplotlib.org/users/customizing.html) file.
 
