@@ -148,9 +148,8 @@ function __init__()
     ccall(:jl_generating_output, Cint, ()) == 1 && return nothing
     isjulia_display[] = isdisplayok()
     PythonCall.pycopy!(matplotlib, pyimport("matplotlib"))
-    mvers = pyconvert(String, matplotlib.__version__)
     global version = try
-        vparse(mvers)
+        vparse(pyconvert(String, matplotlib.__version__))
     catch
         v"0.0.0" # fallback
     end
