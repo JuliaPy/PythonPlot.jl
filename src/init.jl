@@ -178,6 +178,9 @@ function __init__()
     end
 
     init_colormaps()
+
+    # Ensure that the event loop is stopped when the Julia process exits
+    atexit(pygui_stop_all)
 end
 
 function pygui(b::Bool)
