@@ -30,6 +30,8 @@ jobs:
             arch: arm64
           - os: ubuntu-latest
             arch: arm64
+          - os: macOS-latest
+            version: '1.6'
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
