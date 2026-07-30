@@ -180,6 +180,11 @@ for f in plt_funcs
     end
 end
 
+# convert axis(...) return value to Julia Float64 tuple
+@doc LazyHelp(pyplot,"axis") function axis(args...; kws...)
+    return pyconvert(NTuple{4,Float64}, pycall(pyplot."axis", args...; kws...))
+end
+
 # rename to avoid type piracy:
 @doc LazyHelp(pyplot,"step") plotstep(x, y; kws...) = pycall(pyplot.step, x, y; kws...)
 
@@ -199,7 +204,7 @@ plotclose(f::AbstractString) = pyplot.close(f)
 
 # rename to avoid type piracy:
 @doc LazyHelp(pyplot,"fill") plotfill(x::AbstractArray,y::AbstractArray, args...; kws...) =
-    pycall(pyplot.fill, PyAny, x, y, args...; kws...)
+    pycall(pyplot.fill, x, y, args...; kws...)
 
 # consistent capitalization with mplot3d
 @doc LazyHelp(pyplot,"hist2d") hist2D(args...; kws...) = pycall(pyplot.hist2d, args...; kws...)
